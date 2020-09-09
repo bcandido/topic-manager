@@ -1,7 +1,13 @@
 apiVersion: broker.bcandido.com/v1alpha1
 kind: Broker
 metadata:
-  name: broker-sample
+  name: local-kafka
+  broker-type: kafka
 spec:
-  # Add fields here
-  foo: bar
+  name: local-kafka
+  type: kafka
+  configuration:
+    bootstrapServers:
+      - localhost:19092
+      - localhost:29092
+      - localhost:39092

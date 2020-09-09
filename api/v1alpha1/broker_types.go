@@ -20,16 +20,16 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
-// NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
-
 // BrokerSpec defines the desired state of Broker
 type BrokerSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
+	Name          string              `json:"name,omitempty"`
+	Type          string              `json:"type,omitempty"`
+	Configuration BrokerConfiguration `json:"configuration,omitempty"`
+}
 
-	// Foo is an example field of Broker. Edit Broker_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+type BrokerConfiguration struct {
+	BootstrapServers []string `json:"bootstrapServers,omitempty"`
 }
 
 // BrokerStatus defines the observed state of Broker
