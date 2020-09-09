@@ -20,34 +20,20 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// +kubebuilder:validation:Enum=kafka
-type BrokerType string
+// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
+// NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
-const (
-	KafkaBroker BrokerType = "kafka"
-)
-
-// BrokerSpec defines the desired state of Broker
-type BrokerSpec struct {
+// TopicSpec defines the desired state of Topic
+type TopicSpec struct {
+	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	// +kubebuilder:validation:Required
-	Name string `json:"name,omitempty"`
-
-	// +kubebuilder:validation:Required
-	Type BrokerType `json:"type,omitempty"`
-
-	// +kubebuilder:validation:Required
-	Configuration BrokerConfiguration `json:"configuration"`
+	// Foo is an example field of Topic. Edit Topic_types.go to remove/update
+	Foo string `json:"foo,omitempty"`
 }
 
-type BrokerConfiguration struct {
-	// +kubebuilder:validation:Required
-	BootstrapServers []string `json:"bootstrapServers,omitempty"`
-}
-
-// BrokerStatus defines the observed state of Broker
-type BrokerStatus struct {
+// TopicStatus defines the observed state of Topic
+type TopicStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 }
@@ -55,24 +41,24 @@ type BrokerStatus struct {
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 
-// Broker is the Schema for the brokers API
-type Broker struct {
+// Topic is the Schema for the topics API
+type Topic struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   BrokerSpec   `json:"spec,omitempty"`
-	Status BrokerStatus `json:"status,omitempty"`
+	Spec   TopicSpec   `json:"spec,omitempty"`
+	Status TopicStatus `json:"status,omitempty"`
 }
 
 // +kubebuilder:object:root=true
 
-// BrokerList contains a list of Broker
-type BrokerList struct {
+// TopicList contains a list of Topic
+type TopicList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []Broker `json:"items"`
+	Items           []Topic `json:"items"`
 }
 
 func init() {
-	SchemeBuilder.Register(&Broker{}, &BrokerList{})
+	SchemeBuilder.Register(&Topic{}, &TopicList{})
 }

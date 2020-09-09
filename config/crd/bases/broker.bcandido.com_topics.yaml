@@ -6,20 +6,20 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.3.0
   creationTimestamp: null
-  name: brokers.broker.bcandido.com
+  name: topics.broker.bcandido.com
 spec:
   group: broker.bcandido.com
   names:
-    kind: Broker
-    listKind: BrokerList
-    plural: brokers
-    singular: broker
+    kind: Topic
+    listKind: TopicList
+    plural: topics
+    singular: topic
   scope: Namespaced
   subresources:
     status: {}
   validation:
     openAPIV3Schema:
-      description: Broker is the Schema for the brokers API
+      description: Topic is the Schema for the topics API
       properties:
         apiVersion:
           description: 'APIVersion defines the versioned schema of this representation
@@ -34,26 +34,15 @@ spec:
         metadata:
           type: object
         spec:
-          description: BrokerSpec defines the desired state of Broker
+          description: TopicSpec defines the desired state of Topic
           properties:
-            configuration:
-              properties:
-                bootstrapServers:
-                  items:
-                    type: string
-                  type: array
-              type: object
-            name:
+            foo:
+              description: Foo is an example field of Topic. Edit Topic_types.go to
+                remove/update
               type: string
-            type:
-              enum:
-              - kafka
-              type: string
-          required:
-          - configuration
           type: object
         status:
-          description: BrokerStatus defines the observed state of Broker
+          description: TopicStatus defines the observed state of Topic
           type: object
       type: object
   version: v1alpha1

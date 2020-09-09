@@ -5,6 +5,9 @@ resources:
 - group: broker
   kind: Broker
   version: v1alpha1
+- group: broker
+  kind: Topic
+  version: v1alpha1
 version: 3-alpha
 plugins:
   go.operator-sdk.io/v2.0.0: {}
