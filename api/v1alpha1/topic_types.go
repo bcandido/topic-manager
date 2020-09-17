@@ -20,14 +20,14 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-const (
-	TopicStatusCreating = "Creating"
-	TopicStatusCreated = "Created"
-	TopicStatusFailure = "Failure"
-)
-
 // +kubebuilder:validation:Enum=Creating,Created,Failure
 type TopicStatusValue string
+
+const (
+	TopicStatusCreating = "Creating"
+	TopicStatusCreated  = "Created"
+	TopicStatusFailure  = "Failure"
+)
 
 type TopicConfiguration struct {
 	// +kubebuilder:validation:Required

@@ -20,6 +20,14 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// +kubebuilder:validation:Enum=Creating,Created,Failure
+type BrokerStatusValue string
+
+const (
+	BrokerOnline  = "Online"
+	BrokerOffline = "Offline"
+)
+
 // +kubebuilder:validation:Enum=kafka
 type BrokerType string
 
@@ -48,8 +56,7 @@ type BrokerConfiguration struct {
 
 // BrokerStatus defines the observed state of Broker
 type BrokerStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	Status BrokerStatusValue
 }
 
 // +kubebuilder:object:root=true
