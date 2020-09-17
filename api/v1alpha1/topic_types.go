@@ -20,22 +20,38 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
-// NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
+const (
+	TopicStatusCreating = "Creating"
+	TopicStatusCreated = "Created"
+	TopicStatusFailure = "Failure"
+)
+
+// +kubebuilder:validation:Enum=Creating,Created,Failure
+type TopicStatusValue string
+
+type TopicConfiguration struct {
+	// +kubebuilder:validation:Required
+	Partitions int `json:"partitions,omitempty"`
+
+	// +kubebuilder:validation:Required
+	ReplicationFactor int `json:"replication-factor,omitempty"`
+}
 
 // TopicSpec defines the desired state of Topic
 type TopicSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	// +kubebuilder:validation:Required
+	Name string `json:"name,omitempty"`
 
-	// Foo is an example field of Topic. Edit Topic_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+	// +kubebuilder:validation:Required
+	Broker string `json:"broker,omitempty"`
+
+	// +kubebuilder:validation:Required
+	Configuration TopicConfiguration `json:"configuration,omitempty"`
 }
 
 // TopicStatus defines the observed state of Topic
 type TopicStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	Value TopicStatusValue `json:"status,omitempty"`
 }
 
 // +kubebuilder:object:root=true

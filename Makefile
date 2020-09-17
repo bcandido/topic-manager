@@ -4,6 +4,9 @@ IMG ?= controller:latest
 # Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
 CRD_OPTIONS ?= "crd:trivialVersions=true"
 
+
+KUBEBUILDER_ASSETS ?= $(CURDIR)/bin
+
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
 GOBIN=$(shell go env GOPATH)/bin
@@ -15,6 +18,7 @@ all: manager
 
 # Run tests
 test: generate fmt vet manifests
+	KUBEBUILDER_ASSETS=$(KUBEBUILDER_ASSETS) \
 	go test ./... -coverprofile cover.out
 
 # Build manager binary

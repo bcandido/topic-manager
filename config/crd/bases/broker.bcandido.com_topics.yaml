@@ -15,8 +15,6 @@ spec:
     plural: topics
     singular: topic
   scope: Namespaced
-  subresources:
-    status: {}
   validation:
     openAPIV3Schema:
       description: Topic is the Schema for the topics API
@@ -36,13 +34,17 @@ spec:
         spec:
           description: TopicSpec defines the desired state of Topic
           properties:
-            foo:
-              description: Foo is an example field of Topic. Edit Topic_types.go to
-                remove/update
+            broker:
               type: string
-          type: object
-        status:
-          description: TopicStatus defines the observed state of Topic
+            configuration:
+              properties:
+                partitions:
+                  type: integer
+                replication-factor:
+                  type: integer
+              type: object
+            name:
+              type: string
           type: object
       type: object
   version: v1alpha1

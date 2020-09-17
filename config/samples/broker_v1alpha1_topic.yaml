@@ -1,7 +1,10 @@
 apiVersion: broker.bcandido.com/v1alpha1
 kind: Topic
 metadata:
-  name: topic-sample
+  name: cool-topic
 spec:
-  # Add fields here
-  foo: bar
+  name: cool-topic
+  broker: local-kafka
+  configuration:
+    partitions: 15
+    replication-factor: 3
