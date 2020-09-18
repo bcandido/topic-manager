@@ -18,6 +18,11 @@ package controllers
 
 import (
 	"context"
+	kafka_manager "github.com/bcandido/topic-controller"
+	"k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -41,7 +46,65 @@ func (r *BrokerReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	_ = context.Background()
 	_ = r.Log.WithValues("broker", req.NamespacedName)
 
-	// your logic here
+	broker := &brokerv1alpha1.Broker{}
+	err := r.Client.Get(context.TODO(), req.NamespacedName, broker)
+	r.Log.Info("fetched broker", "Broker.Spec", broker.Spec)
+	if err != nil {
+		if errors.IsNotFound(err) {
+			// Request object not found, could have been deleted after reconcile request.
+			// Return and don't requeue
+			return reconcile.Result{}, nil
+		}
+		// Error reading the object
+		// requeue the request.
+		return reconcile.Result{}, err
+	}
+
+	kafkaConfig := kafka_manager.KafkaConfig{Brokers: getBrokerConnectionString(broker)}
+	topicController := kafka_manager.New(kafkaConfig)
+	if topicController == nil {
+		// Error creating kafka client
+		// requeue the request.
+		return reconcile.Result{}, err
+	}
+
+	healthCheckTopicName := "topic-manager.broker.health-check." + req.Namespace + "." + req.Name
+	kafkaTopic := topicController.Get(healthCheckTopicName)
+	if kafkaTopic != nil {
+		// TODO: set status to online
+
+		// Topic with same name on broker already exists
+		// Return and don't requeue
+		return reconcile.Result{}, nil
+	}
+
+	healthCheckTopic := &brokerv1alpha1.Topic{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      healthCheckTopicName,
+			Namespace: req.Namespace,
+		},
+		Spec: brokerv1alpha1.TopicSpec{
+			Name:   healthCheckTopicName,
+			Broker: broker.Name,
+			Configuration: brokerv1alpha1.TopicConfiguration{
+				Partitions:        1,
+				ReplicationFactor: 1,
+			},
+		},
+	}
+
+	if err := controllerutil.SetControllerReference(broker, healthCheckTopic, r.Scheme); err != nil {
+		// Error setting controller reference - requeue the request.
+		// requeue the request.
+		return reconcile.Result{}, err
+	}
+
+	err = r.Client.Create(context.TODO(), healthCheckTopic)
+	if err != nil {
+		// Error creating health check topic
+		// requeue the request.
+		return reconcile.Result{}, err
+	}
 
 	return ctrl.Result{}, nil
 }

@@ -80,7 +80,7 @@ func (r *TopicReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	}
 
 	kafkaConfig := kafka_manager.KafkaConfig{Brokers: getBrokerConnectionString(broker)}
-	topicController, err := kafka_manager.New(kafkaConfig)
+	topicController := kafka_manager.New(kafkaConfig)
 	if err != nil {
 		// update status to failure
 		topic.Status.Value = brokerv1alpha1.TopicStatusFailure
