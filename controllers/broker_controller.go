@@ -21,7 +21,7 @@ import (
 	kafka_manager "github.com/bcandido/topic-controller"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	"github.com/go-logr/logr"
@@ -43,67 +43,75 @@ type BrokerReconciler struct {
 // +kubebuilder:rbac:groups=broker.bcandido.com,resources=brokers/status,verbs=get;update;patch
 
 func (r *BrokerReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
-	_ = context.Background()
-	_ = r.Log.WithValues("broker", req.NamespacedName)
+	ctx := context.Background()
+	log := r.Log.WithValues("broker", req.NamespacedName)
 
-	broker := &brokerv1alpha1.Broker{}
-	err := r.Client.Get(context.TODO(), req.NamespacedName, broker)
-	r.Log.Info("fetched broker", "Broker.Spec", broker.Spec)
+	broker := brokerv1alpha1.Broker{}
+	err := r.Client.Get(ctx, req.NamespacedName, &broker)
+	log.Info("fetching broker", "broker", req.NamespacedName)
 	if err != nil {
 		if errors.IsNotFound(err) {
-			// Request object not found, could have been deleted after reconcile request.
-			// Return and don't requeue
-			return reconcile.Result{}, nil
+			log.Info("broker not found. Ignoring...")
+			return reconcile.Result{}, client.IgnoreNotFound(err) // return and don't requeue
 		}
-		// Error reading the object
-		// requeue the request.
-		return reconcile.Result{}, err
+		log.Error(err, "broker not found")
+		return reconcile.Result{}, err // requeue the request.
 	}
 
 	kafkaConfig := kafka_manager.KafkaConfig{Brokers: broker.ConnectionString()}
 	topicController := kafka_manager.New(kafkaConfig)
 	if topicController == nil {
-		// Error creating kafka client
-		// requeue the request.
-		return reconcile.Result{}, err
+		log.Error(err, "error creating kafka client")
+
+		broker.Status.Status = brokerv1alpha1.BrokerOffline
+		if err = r.Client.Status().Update(ctx, &broker); err != nil {
+			log.Error(err, "error changing broker status to offline", "topic-controller", topicController)
+		}
+		return reconcile.Result{}, err // requeue the request.
 	}
 
+	topic := brokerv1alpha1.Topic{}
 	healthCheckTopicName := "topic-manager.broker.health-check." + req.Namespace + "." + req.Name
-	kafkaTopic := topicController.Get(healthCheckTopicName)
-	if kafkaTopic != nil {
-		// TODO: set status to online
-
-		// Topic with same name on broker already exists
-		// Return and don't requeue
-		return reconcile.Result{}, nil
-	}
-
-	healthCheckTopic := &brokerv1alpha1.Topic{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      healthCheckTopicName,
-			Namespace: req.Namespace,
-		},
-		Spec: brokerv1alpha1.TopicSpec{
-			Name:   healthCheckTopicName,
-			Broker: broker.Name,
-			Configuration: brokerv1alpha1.TopicConfiguration{
-				Partitions:        1,
-				ReplicationFactor: 1,
+	key := types.NamespacedName{Name: healthCheckTopicName, Namespace: req.Namespace}
+	if err = r.Client.Get(ctx, key, &topic); err != nil && errors.IsNotFound(err) {
+		log.Info("broker could not found health check topic", "health-check topic", healthCheckTopicName)
+		healthCheckTopic := &brokerv1alpha1.Topic{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      healthCheckTopicName,
+				Namespace: req.Namespace,
 			},
-		},
+			Spec: brokerv1alpha1.TopicSpec{
+				Name:   healthCheckTopicName,
+				Broker: broker.Name,
+				Configuration: brokerv1alpha1.TopicConfiguration{
+					Partitions:        1,
+					ReplicationFactor: 1,
+				},
+			},
+		}
+
+		err = r.Client.Create(ctx, healthCheckTopic)
+		if err != nil {
+			log.Error(err, "error creating health check topic", "health-check topic", healthCheckTopicName)
+			return reconcile.Result{}, err // requeue the request.
+		}
+		log.Info("health check topic created", "health-check topic", healthCheckTopicName)
+		return reconcile.Result{Requeue: true}, nil // return and requeue
 	}
 
-	if err := controllerutil.SetControllerReference(broker, healthCheckTopic, r.Scheme); err != nil {
-		// Error setting controller reference - requeue the request.
-		// requeue the request.
-		return reconcile.Result{}, err
+	if kafkaTopic := topicController.Get(healthCheckTopicName); kafkaTopic == nil {
+		broker.Status.Status = brokerv1alpha1.BrokerOffline
+		if err = r.Client.Status().Update(ctx, &broker); err != nil {
+			log.Error(err, "error changing broker status to offline", "topic-controller", topicController)
+		}
+		return reconcile.Result{}, err // requeue the request.
 	}
 
-	err = r.Client.Create(context.TODO(), healthCheckTopic)
-	if err != nil {
-		// Error creating health check topic
-		// requeue the request.
-		return reconcile.Result{}, err
+	if broker.Status.Status != brokerv1alpha1.BrokerOnline {
+		broker.Status.Status = brokerv1alpha1.BrokerOnline
+		if err = r.Client.Status().Update(ctx, &broker); err != nil {
+			log.Error(err, "error changing broker status to online", "topic-controller", topicController)
+		}
 	}
 
 	return ctrl.Result{}, nil
