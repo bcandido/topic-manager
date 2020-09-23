@@ -20,13 +20,12 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// +kubebuilder:validation:Enum=Creating,Created,Failure
 type TopicStatusValue string
 
 const (
-	TopicStatusCreating = "Creating"
-	TopicStatusCreated  = "Created"
-	TopicStatusFailure  = "Failure"
+	TopicStatusCreating TopicStatusValue = "Creating"
+	TopicStatusCreated  TopicStatusValue = "Created"
+	TopicStatusFailure  TopicStatusValue = "Failure"
 )
 
 type TopicConfiguration struct {
@@ -56,6 +55,8 @@ type TopicStatus struct {
 
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
+// +kubebuilder:printcolumn:name="Broker",type=string,JSONPath=`.spec.broker`
+// +kubebuilder:printcolumn:name="Status",type=string,JSONPath=`.status.status`
 
 // Topic is the Schema for the topics API
 type Topic struct {

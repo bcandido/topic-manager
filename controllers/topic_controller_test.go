@@ -62,7 +62,7 @@ func TestTopicReconciler_Reconcile(t *testing.T) {
 
 	fields := fields{
 		Client: cl,
-		Log: klogr.New(),
+		Log:    klogr.New(),
 		Scheme: s,
 	}
 

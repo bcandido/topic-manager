@@ -8,6 +8,13 @@ metadata:
   creationTimestamp: null
   name: topics.broker.bcandido.com
 spec:
+  additionalPrinterColumns:
+    - JSONPath: .spec.broker
+      name: Broker
+      type: string
+    - JSONPath: .status.status
+      name: Status
+      type: string
   group: broker.bcandido.com
   names:
     kind: Topic
@@ -15,6 +22,8 @@ spec:
     plural: topics
     singular: topic
   scope: Namespaced
+  subresources:
+    status: { }
   validation:
     openAPIV3Schema:
       description: Topic is the Schema for the topics API
@@ -44,6 +53,12 @@ spec:
                   type: integer
               type: object
             name:
+              type: string
+          type: object
+        status:
+          description: TopicStatus defines the observed state of Topic
+          properties:
+            status:
               type: string
           type: object
       type: object

@@ -21,7 +21,6 @@ import (
 	"strings"
 )
 
-// +kubebuilder:validation:Enum=Creating,Created,Failure
 type BrokerStatusValue string
 
 const (
@@ -57,11 +56,13 @@ type BrokerConfiguration struct {
 
 // BrokerStatus defines the observed state of Broker
 type BrokerStatus struct {
-	Status BrokerStatusValue
+	Status BrokerStatusValue `json:"status,omitempty"`
 }
 
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
+// +kubebuilder:printcolumn:name="Type",type=string,JSONPath=`.spec.type`
+// +kubebuilder:printcolumn:name="Status",type=string,JSONPath=`.status.status`
 
 // Broker is the Schema for the brokers API
 type Broker struct {
