@@ -60,7 +60,7 @@ func (r *BrokerReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		return reconcile.Result{}, err
 	}
 
-	kafkaConfig := kafka_manager.KafkaConfig{Brokers: getBrokerConnectionString(broker)}
+	kafkaConfig := kafka_manager.KafkaConfig{Brokers: broker.ConnectionString()}
 	topicController := kafka_manager.New(kafkaConfig)
 	if topicController == nil {
 		// Error creating kafka client

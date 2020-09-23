@@ -18,6 +18,7 @@ package v1alpha1
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"strings"
 )
 
 // +kubebuilder:validation:Enum=Creating,Created,Failure
@@ -69,6 +70,10 @@ type Broker struct {
 
 	Spec   BrokerSpec   `json:"spec,omitempty"`
 	Status BrokerStatus `json:"status,omitempty"`
+}
+
+func (b Broker) ConnectionString() string {
+	return strings.Join(b.Spec.Configuration.BootstrapServers, ",")
 }
 
 // +kubebuilder:object:root=true

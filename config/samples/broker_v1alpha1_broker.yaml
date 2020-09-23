@@ -8,6 +8,6 @@ spec:
   type: kafka
   configuration:
     bootstrapServers:
-      - kafka-microk8s-0.kafka:9092
-      - kafka-microk8s-1.kafka:9092
-      - kafka-microk8s-2.kafka:9092
+      - 10.1.29.77:9092
+      - 10.1.29.83:9092
+      - 10.1.29.89:9092

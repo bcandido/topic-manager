@@ -18,16 +18,14 @@ package controllers
 
 import (
 	"context"
-	"k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/types"
-	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"strings"
-
 	kafka_manager "github.com/bcandido/topic-controller"
 	"github.com/go-logr/logr"
+	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	brokerv1alpha1 "github.com/bcandido/topic-manager/api/v1alpha1"
 )
@@ -79,7 +77,7 @@ func (r *TopicReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		return ctrl.Result{Requeue: false}, err
 	}
 
-	kafkaConfig := kafka_manager.KafkaConfig{Brokers: getBrokerConnectionString(broker)}
+	kafkaConfig := kafka_manager.KafkaConfig{Brokers: broker.ConnectionString()}
 	topicController := kafka_manager.New(kafkaConfig)
 	if err != nil {
 		// update status to failure
@@ -118,14 +116,6 @@ func (r *TopicReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 
 	// created successfully
 	return ctrl.Result{}, nil
-}
-
-func getBrokerConnectionString(broker *brokerv1alpha1.Broker) string {
-	return strings.Join(broker.Spec.Configuration.BootstrapServers, ",")
-}
-
-func shouldCreateTopic(err error) bool {
-	return err != nil && errors.IsNotFound(err)
 }
 
 func (r *TopicReconciler) SetupWithManager(mgr ctrl.Manager) error {
