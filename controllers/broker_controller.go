@@ -50,6 +50,8 @@ type BrokerReconciler struct {
 func (r *BrokerReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	log := r.Log.WithValues("broker", req.NamespacedName)
 
+	log.Info("Reconciling Broker")
+
 	broker := brokerv1alpha1.Broker{}
 	if err := r.fetchBrokerFromRequest(req, &broker); err != nil {
 		return reconcile.Result{}, err
@@ -86,6 +88,7 @@ func (r *BrokerReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		}
 	}
 
+	log.Info("broker successfully reconciled")
 	return ctrl.Result{Requeue: true, RequeueAfter: 3 * second}, nil
 }
 
