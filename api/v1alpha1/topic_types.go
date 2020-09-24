@@ -56,6 +56,8 @@ type TopicStatus struct {
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:name="Broker",type=string,JSONPath=`.spec.broker`
+// +kubebuilder:printcolumn:name="Partitions",type=string,JSONPath=`.spec.configuration.partitions`
+// +kubebuilder:printcolumn:name="Replication",type=string,JSONPath=`.spec.configuration.replication-factor`
 // +kubebuilder:printcolumn:name="Status",type=string,JSONPath=`.status.status`
 
 // Topic is the Schema for the topics API

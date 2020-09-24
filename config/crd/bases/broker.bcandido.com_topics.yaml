@@ -12,6 +12,12 @@ spec:
     - JSONPath: .spec.broker
       name: Broker
       type: string
+    - JSONPath: .spec.configuration.partitions
+      name: Partitions
+      type: string
+    - JSONPath: .spec.configuration.replication-factor
+      name: Replication
+      type: string
     - JSONPath: .status.status
       name: Status
       type: string
