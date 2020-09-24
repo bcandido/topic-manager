@@ -18,7 +18,7 @@ package controllers
 
 import (
 	"context"
-	kafka_manager "github.com/bcandido/topic-controller"
+	kafkamanager "github.com/bcandido/topic-controller"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -107,7 +107,7 @@ func (r *BrokerReconciler) fetchBrokerFromRequest(req ctrl.Request, broker *brok
 	return nil
 }
 
-func (r *BrokerReconciler) buildHealthCheckTopic(req ctrl.Request, broker brokerv1alpha1.Broker, kafkaTopic *kafka_manager.Topic) *brokerv1alpha1.Topic {
+func (r *BrokerReconciler) buildHealthCheckTopic(req ctrl.Request, broker brokerv1alpha1.Broker, kafkaTopic *kafkamanager.Topic) *brokerv1alpha1.Topic {
 	return &brokerv1alpha1.Topic{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      kafkaTopic.Name,
@@ -124,7 +124,7 @@ func (r *BrokerReconciler) buildHealthCheckTopic(req ctrl.Request, broker broker
 	}
 }
 
-func (r *BrokerReconciler) checkingConnectivity(topicController kafka_manager.TopicControllerAPI, topicName string) (*kafka_manager.Topic, error) {
+func (r *BrokerReconciler) checkingConnectivity(topicController kafkamanager.TopicControllerAPI, topicName string) (*kafkamanager.Topic, error) {
 	var err error = nil
 	kafkaTopic := topicController.Get(topicName)
 	if kafkaTopic == nil {
@@ -174,7 +174,7 @@ func (r *BrokerReconciler) setStatus(broker brokerv1alpha1.Broker, status broker
 	return nil
 }
 
-func buildTopicController(broker *brokerv1alpha1.Broker) (kafka_manager.TopicControllerAPI, error) {
+func buildTopicController(broker *brokerv1alpha1.Broker) (kafkamanager.TopicControllerAPI, error) {
 	topicController := getKafkaTopicController(broker.ConnectionString())
 	if topicController == nil {
 		return topicController, errors.NewServiceUnavailable("error creating kafka client. updating broker status to offline")
@@ -182,9 +182,9 @@ func buildTopicController(broker *brokerv1alpha1.Broker) (kafka_manager.TopicCon
 	return topicController, nil
 }
 
-func getKafkaTopicController(bootstrapServers string) kafka_manager.TopicControllerAPI {
-	kafkaConfig := kafka_manager.KafkaConfig{Brokers: bootstrapServers}
-	topicController := kafka_manager.New(kafkaConfig)
+func getKafkaTopicController(bootstrapServers string) kafkamanager.TopicControllerAPI {
+	kafkaConfig := kafkamanager.KafkaConfig{Brokers: bootstrapServers}
+	topicController := kafkamanager.New(kafkaConfig)
 	return topicController
 }
 
