@@ -50,7 +50,7 @@ type TopicSpec struct {
 
 // TopicStatus defines the observed state of Topic
 type TopicStatus struct {
-	Value TopicStatusValue `json:"status,omitempty"`
+	Status TopicStatusValue `json:"status,omitempty"`
 }
 
 // +kubebuilder:object:root=true

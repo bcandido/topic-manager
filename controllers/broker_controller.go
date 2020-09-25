@@ -18,23 +18,22 @@ package controllers
 
 import (
 	"context"
+	"fmt"
 	kafkamanager "github.com/bcandido/topic-controller"
+	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
-	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"time"
-
-	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	brokerv1alpha1 "github.com/bcandido/topic-manager/api/v1alpha1"
 )
 
 const (
-	second = time.Duration(1000000000)
+	healthCheckTopicPrefix = "topic-manager.broker.health-check"
 )
 
 // BrokerReconciler reconciles a Broker object
@@ -65,8 +64,8 @@ func (r *BrokerReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		return reconcile.Result{}, err
 	}
 
-	healthCheckTopicName := r.GetHealthCheckTopicName(req)
 	log.Info("checking broker connectivity")
+	healthCheckTopicName := r.getHealthCheckTopicName(req)
 	kafkaTopic, err := r.checkingConnectivity(topicController, healthCheckTopicName)
 	if err != nil {
 		if err = r.setStatusOffline(broker); err != nil {
@@ -92,8 +91,8 @@ func (r *BrokerReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	return ctrl.Result{Requeue: true, RequeueAfter: 3 * second}, nil
 }
 
-func (r *BrokerReconciler) GetHealthCheckTopicName(req ctrl.Request) string {
-	return "topic-manager.broker.health-check." + req.Namespace + "." + req.Name
+func (r *BrokerReconciler) getHealthCheckTopicName(req ctrl.Request) string {
+	return fmt.Sprintf("%v.%v.%v", healthCheckTopicPrefix, req.Namespace, req.Name)
 }
 
 func (r *BrokerReconciler) fetchBrokerFromRequest(req ctrl.Request, broker *brokerv1alpha1.Broker) error {
@@ -175,20 +174,6 @@ func (r *BrokerReconciler) setStatus(broker brokerv1alpha1.Broker, status broker
 	}
 	log.Info("broker status updated to", "status", status)
 	return nil
-}
-
-func buildTopicController(broker *brokerv1alpha1.Broker) (kafkamanager.TopicControllerAPI, error) {
-	topicController := getKafkaTopicController(broker.ConnectionString())
-	if topicController == nil {
-		return topicController, errors.NewServiceUnavailable("error creating kafka client. updating broker status to offline")
-	}
-	return topicController, nil
-}
-
-func getKafkaTopicController(bootstrapServers string) kafkamanager.TopicControllerAPI {
-	kafkaConfig := kafkamanager.KafkaConfig{Brokers: bootstrapServers}
-	topicController := kafkamanager.New(kafkaConfig)
-	return topicController
 }
 
 func (r *BrokerReconciler) SetupWithManager(mgr ctrl.Manager) error {

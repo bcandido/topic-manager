@@ -41,12 +41,12 @@ type TopicReconciler struct {
 // +kubebuilder:rbac:groups=broker.bcandido.com,resources=topics/status,verbs=get;update;patch
 
 func (r *TopicReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
-	reqLogger := r.Log.WithValues("Request.Namespace", req.Namespace, "Request.Name", req.Name)
-	reqLogger.Info("Reconciling Topic")
+	log := r.Log.WithValues("topic", req.NamespacedName)
 
-	topic := &brokerv1alpha1.Topic{}
-	key := types.NamespacedName{Name: req.Name, Namespace: req.Namespace}
-	err := r.Client.Get(context.TODO(), key, topic)
+	log.Info("Reconciling Topic")
+
+	topic := brokerv1alpha1.Topic{}
+	err := r.Client.Get(context.TODO(), req.NamespacedName, &topic)
 	r.Log.Info("fetched requested topic", "Topic.Spec", topic.Spec)
 	if err != nil {
 		if errors.IsNotFound(err) {
@@ -58,63 +58,56 @@ func (r *TopicReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		return reconcile.Result{}, err
 	}
 
-	broker := &brokerv1alpha1.Broker{}
-	key = types.NamespacedName{Name: topic.Spec.Broker, Namespace: topic.Namespace}
-	err = r.Client.Get(context.TODO(), key, broker)
+	broker := brokerv1alpha1.Broker{}
+	err = r.Client.Get(context.TODO(), types.NamespacedName{Name: topic.Spec.Broker, Namespace: topic.Namespace}, &broker)
 	r.Log.Info("fetched broker reference", "Broker.Spec", broker.Spec)
-	if err != nil && errors.IsNotFound(err) {
-
-		// update status to failure
-		topic.Status.Value = brokerv1alpha1.TopicStatusFailure
-		err = r.Client.Status().Update(context.Background(), topic)
-		if err != nil {
-			r.Log.Error(err, "unable to update topic status")
-			return reconcile.Result{}, err //requeue
-		}
-
-		// Broker reference could no be found, then topic cannot be created on broker
-		// Return and don't requeue
-		return ctrl.Result{Requeue: false}, err
-	}
-
-	kafkaConfig := kafka_manager.KafkaConfig{Brokers: broker.ConnectionString()}
-	topicController := kafka_manager.New(kafkaConfig)
 	if err != nil {
-		// update status to failure
-		topic.Status.Value = brokerv1alpha1.TopicStatusFailure
-		err = r.Client.Status().Update(context.Background(), topic)
-		if err != nil {
-			r.Log.Error(err, "unable to update topic status")
-			return reconcile.Result{}, err //requeue
+		if errors.IsNotFound(err) {
+			log.Info("topic not found. Ignoring...")
+			return reconcile.Result{}, client.IgnoreNotFound(err)
 		}
-	}
-
-	err = topicController.Create(kafka_manager.Topic{
-		Name:              topic.Spec.Name,
-		Partitions:        topic.Spec.Configuration.Partitions,
-		ReplicationFactor: topic.Spec.Configuration.ReplicationFactor,
-	})
-	if err != nil {
-		// update status to failure
-		topic.Status.Value = brokerv1alpha1.TopicStatusFailure
-		err = r.Client.Status().Update(context.Background(), topic)
-		if err != nil {
-			r.Log.Error(err, "unable to update topic status")
-			return reconcile.Result{}, err //requeue
+		if err = r.setStatus(topic, brokerv1alpha1.TopicStatusFailure); err != nil {
+			return reconcile.Result{}, err
 		}
-
-		r.Log.Info("Error creating topic", "topic", topic.Spec)
 		return reconcile.Result{}, err
 	}
 
-	topic.Status.Value = brokerv1alpha1.TopicStatusCreated
-	err = r.Client.Status().Update(context.Background(), topic)
-	if err != nil {
-		r.Log.Error(err, "unable to update topic status")
-		return reconcile.Result{}, err //requeue
+	if broker.Status.Status == brokerv1alpha1.BrokerOffline {
+		log.Info("broker offline. retrying later", "broker", broker.Spec.Name)
+		if err = r.setStatus(topic, brokerv1alpha1.TopicStatusCreating); err != nil {
+			return reconcile.Result{}, err
+		}
+		return reconcile.Result{RequeueAfter: 5 * second}, nil
 	}
 
-	// created successfully
+	topicController, err := buildTopicController(&broker)
+	if err != nil {
+		if err = r.setStatus(topic, brokerv1alpha1.TopicStatusCreating); err != nil {
+			return reconcile.Result{}, err
+		}
+		return reconcile.Result{}, err
+	}
+
+	kafkaTopic := topicController.Get(topic.Spec.Name)
+	if kafkaTopic == nil {
+		err = topicController.Create(kafka_manager.Topic{
+			Name:              topic.Spec.Name,
+			Partitions:        topic.Spec.Configuration.Partitions,
+			ReplicationFactor: topic.Spec.Configuration.ReplicationFactor,
+		})
+		if err != nil {
+			r.Log.Info("Error creating topic", "topic", topic.Spec)
+			if err = r.setStatus(topic, brokerv1alpha1.TopicStatusFailure); err != nil {
+				return reconcile.Result{}, err
+			}
+			return reconcile.Result{}, err
+		}
+	}
+
+	if err = r.setStatus(topic, brokerv1alpha1.TopicStatusCreated); err != nil {
+		return reconcile.Result{}, err
+	}
+
 	return ctrl.Result{}, nil
 }
 
@@ -122,4 +115,20 @@ func (r *TopicReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&brokerv1alpha1.Topic{}).
 		Complete(r)
+}
+
+func (r *TopicReconciler) setStatus(topic brokerv1alpha1.Topic, status brokerv1alpha1.TopicStatusValue) error {
+	log := r.Log.WithValues("topic", topic.ObjectMeta.Name, "namespace", topic.ObjectMeta.Namespace)
+	log.Info("updating topic status", "status", status)
+	if status == topic.Status.Status {
+		log.Info("topic is already with correctly status", "status", status)
+		return nil
+	}
+
+	topic.Status.Status = status
+	if err := r.Client.Status().Update(context.TODO(), &topic); err != nil {
+		return err
+	}
+	log.Info("topic status updated to", "status", status)
+	return nil
 }
