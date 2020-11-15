@@ -50,8 +50,6 @@ spec:
                     type: string
                   type: array
               type: object
-            name:
-              type: string
             type:
               enum:
               - kafka

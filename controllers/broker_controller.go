@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 	kafkamanager "github.com/bcandido/topic-controller"
+	brokerv1alpha1 "github.com/bcandido/topic-manager/api/v1alpha1"
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -28,8 +29,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-
-	brokerv1alpha1 "github.com/bcandido/topic-manager/api/v1alpha1"
+	"time"
 )
 
 const (
@@ -71,7 +71,7 @@ func (r *BrokerReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		if err = r.setStatusOffline(broker); err != nil {
 			return reconcile.Result{}, err
 		}
-		return reconcile.Result{Requeue: true, RequeueAfter: 5 * second}, err
+		return reconcile.Result{Requeue: true, RequeueAfter: 5 * time.Second}, err
 	}
 	log.Info("broker connectivity health")
 
@@ -88,7 +88,7 @@ func (r *BrokerReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	}
 
 	log.Info("broker successfully reconciled")
-	return ctrl.Result{Requeue: true, RequeueAfter: 3 * second}, nil
+	return ctrl.Result{Requeue: true, RequeueAfter: 10 * time.Minute}, nil
 }
 
 func (r *BrokerReconciler) getHealthCheckTopicName(req ctrl.Request) string {
@@ -116,7 +116,6 @@ func (r *BrokerReconciler) buildHealthCheckTopic(req ctrl.Request, broker broker
 			Namespace: req.Namespace,
 		},
 		Spec: brokerv1alpha1.TopicSpec{
-			Name:   kafkaTopic.Name,
 			Broker: broker.Name,
 			Configuration: brokerv1alpha1.TopicConfiguration{
 				Partitions:        kafkaTopic.Partitions,

@@ -23,9 +23,9 @@ import (
 type TopicStatusValue string
 
 const (
-	TopicStatusCreating TopicStatusValue = "Creating"
-	TopicStatusCreated  TopicStatusValue = "Created"
-	TopicStatusFailure  TopicStatusValue = "Failure"
+	TopicStatusOutOfSync TopicStatusValue = "OutOfSync"
+	TopicStatusCreated   TopicStatusValue = "Created"
+	TopicStatusFailure   TopicStatusValue = "Failure"
 )
 
 type TopicConfiguration struct {
@@ -33,14 +33,11 @@ type TopicConfiguration struct {
 	Partitions int `json:"partitions,omitempty"`
 
 	// +kubebuilder:validation:Required
-	ReplicationFactor int `json:"replication-factor,omitempty"`
+	ReplicationFactor int `json:"replicationFactor,omitempty"`
 }
 
 // TopicSpec defines the desired state of Topic
 type TopicSpec struct {
-	// +kubebuilder:validation:Required
-	Name string `json:"name,omitempty"`
-
 	// +kubebuilder:validation:Required
 	Broker string `json:"broker,omitempty"`
 
@@ -57,7 +54,7 @@ type TopicStatus struct {
 // +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:name="Broker",type=string,JSONPath=`.spec.broker`
 // +kubebuilder:printcolumn:name="Partitions",type=string,JSONPath=`.spec.configuration.partitions`
-// +kubebuilder:printcolumn:name="Replication",type=string,JSONPath=`.spec.configuration.replication-factor`
+// +kubebuilder:printcolumn:name="Replication",type=string,JSONPath=`.spec.configuration.replicationFactor`
 // +kubebuilder:printcolumn:name="Status",type=string,JSONPath=`.status.status`
 
 // Topic is the Schema for the topics API

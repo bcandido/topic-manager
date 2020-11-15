@@ -47,7 +47,6 @@ func TestTopicReconciler_Reconcile(t *testing.T) {
 			Namespace: namespace,
 		},
 		Spec: brokerv1alpha1.TopicSpec{
-			Name:   name,
 			Broker: "localhost:9092",
 			Configuration: brokerv1alpha1.TopicConfiguration{
 				Partitions:        partitions,

@@ -40,9 +40,6 @@ type BrokerSpec struct {
 	// Important: Run "make" to regenerate code after modifying this file
 
 	// +kubebuilder:validation:Required
-	Name string `json:"name,omitempty"`
-
-	// +kubebuilder:validation:Required
 	Type BrokerType `json:"type,omitempty"`
 
 	// +kubebuilder:validation:Required

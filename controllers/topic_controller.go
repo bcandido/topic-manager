@@ -26,6 +26,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	"time"
 
 	brokerv1alpha1 "github.com/bcandido/topic-manager/api/v1alpha1"
 )
@@ -73,30 +74,30 @@ func (r *TopicReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	}
 
 	if broker.Status.Status == brokerv1alpha1.BrokerOffline {
-		log.Info("broker offline. retrying later", "broker", broker.Spec.Name)
-		if err = r.setStatus(topic, brokerv1alpha1.TopicStatusCreating); err != nil {
+		log.Info("broker offline. retrying later", "broker", broker.Name)
+		if err = r.setStatus(topic, brokerv1alpha1.TopicStatusOutOfSync); err != nil {
 			return reconcile.Result{}, err
 		}
-		return reconcile.Result{RequeueAfter: 5 * second}, nil
+		return reconcile.Result{RequeueAfter: 5 * time.Second}, nil
 	}
 
 	topicController, err := buildTopicController(&broker)
 	if err != nil {
-		if err = r.setStatus(topic, brokerv1alpha1.TopicStatusCreating); err != nil {
+		if err = r.setStatus(topic, brokerv1alpha1.TopicStatusFailure); err != nil {
 			return reconcile.Result{}, err
 		}
 		return reconcile.Result{}, err
 	}
 
-	kafkaTopic := topicController.Get(topic.Spec.Name)
+	kafkaTopic := topicController.Get(topic.Name)
 	if kafkaTopic == nil {
 		err = topicController.Create(kafka_manager.Topic{
-			Name:              topic.Spec.Name,
+			Name:              topic.Name,
 			Partitions:        topic.Spec.Configuration.Partitions,
 			ReplicationFactor: topic.Spec.Configuration.ReplicationFactor,
 		})
 		if err != nil {
-			r.Log.Info("Error creating topic", "topic", topic.Spec)
+			r.Log.Info("error creating topic", "topic", topic.Spec)
 			if err = r.setStatus(topic, brokerv1alpha1.TopicStatusFailure); err != nil {
 				return reconcile.Result{}, err
 			}

@@ -2,12 +2,10 @@ apiVersion: broker.bcandido.com/v1alpha1
 kind: Broker
 metadata:
   name: local-kafka
-
 spec:
-  name: local-kafka
   type: kafka
   configuration:
     bootstrapServers:
-      - 10.1.29.102:9092
-      - 10.1.29.107:9092
-      - 10.1.29.109:9092
+      - 10.1.29.225:9092
+      - 10.1.29.233:9092
+      - 10.1.29.237:9092

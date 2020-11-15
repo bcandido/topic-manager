@@ -15,7 +15,7 @@ spec:
     - JSONPath: .spec.configuration.partitions
       name: Partitions
       type: string
-    - JSONPath: .spec.configuration.replication-factor
+    - JSONPath: .spec.configuration.replicationFactor
       name: Replication
       type: string
     - JSONPath: .status.status
@@ -55,11 +55,9 @@ spec:
               properties:
                 partitions:
                   type: integer
-                replication-factor:
+                replicationFactor:
                   type: integer
               type: object
-            name:
-              type: string
           type: object
         status:
           description: TopicStatus defines the observed state of Topic
